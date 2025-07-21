@@ -1,48 +1,28 @@
-name: Remote-build & Deploy
-
-on:
-  push:
-    branches: [main]          # trigger on pushes to BillSplit.github.io
-  workflow_dispatch:          # manual re-run button
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. Get the *real* source that contains package.json
       - name: Checkout source repo
         uses: actions/checkout@v4
         with:
-          repository: VarunBhardwaj1/BillSplit.github.io  # source repo
-          ref: main                               # branch with package.json
-          path: source                            # put it in ./source/
+          repository: VarunBhardwaj1/BillSplit.github.io
+          ref: main
+          path: source
 
-      # 2. Install & build (no lock-file required)
+      - name: Check contents of source folder
+        run: ls -la source
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install deps (no lock)
+      - name: Install dependencies
         run: |
           cd source
-          npm install --no-package-lock   # forces fresh install every time
+          npm install --no-package-lock
 
       - name: Build project
         run: |
           cd source
-          npm run build                   # creates ./source/dist/
-
-      # 3. Publish built site to Pages
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: source/dist
-
-      - name: Deploy to Pages
-        uses: actions/deploy-pages@v4
+          npm run build
