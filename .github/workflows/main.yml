@@ -18,7 +18,7 @@ jobs:
       - name: Checkout source repo
         uses: actions/checkout@v4
         with:
-          repository: VarunBhardwaj1/BillSplit  # source repo
+          repository: VarunBhardwaj1//BillSplit.github.io  # source repo
           ref: main                               # branch with package.json
           path: source                            # put it in ./source/
 
