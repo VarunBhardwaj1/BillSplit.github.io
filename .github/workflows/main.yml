@@ -1,54 +1,48 @@
-name: Build & Deploy (no lock file)
+name: Remote-build & Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main]          # trigger on pushes to BillSplit.github.io
+  workflow_dispatch:          # manual re-run button
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      # 1. Get the *real* source that contains package.json
+      - name: Checkout source repo
         uses: actions/checkout@v4
+        with:
+          repository: VarunBhardwaj1/MyBillSplit  # source repo
+          ref: main                               # branch with package.json
+          path: source                            # put it in ./source/
 
-      # 1. Install Node (no lock-file cache)
+      # 2. Install & build (no lock-file required)
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: ''                # <-- disables lock-file caching
 
-      # 2. Install deps without a lock file
-      - name: Install dependencies
-        run: npm install           # or yarn / pnpm, see below
+      - name: Install deps (no lock)
+        run: |
+          cd source
+          npm install --no-package-lock   # forces fresh install every time
 
-      # 3. Build the project
-      - name: Build
-        run: npm run build
+      - name: Build project
+        run: |
+          cd source
+          npm run build                   # creates ./source/dist/
 
-      # 4. Disable Jekyll & upload
-      - name: Prepare artifact
-        run: touch dist/.nojekyll
-      - name: Upload artifact
+      # 3. Publish built site to Pages
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: source/dist
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy to Pages
         uses: actions/deploy-pages@v4
