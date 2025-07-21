@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Build & Deploy (no lock file)
 
 on:
   push:
@@ -9,19 +9,37 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 1. Install Node (no lock-file cache)
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-      - run: touch dist/.nojekyll   # disable Jekyll
-      - uses: actions/upload-pages-artifact@v3
+          cache: ''                # <-- disables lock-file caching
+
+      # 2. Install deps without a lock file
+      - name: Install dependencies
+        run: npm install           # or yarn / pnpm, see below
+
+      # 3. Build the project
+      - name: Build
+        run: npm run build
+
+      # 4. Disable Jekyll & upload
+      - name: Prepare artifact
+        run: touch dist/.nojekyll
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
@@ -32,4 +50,5 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/deploy-pages@v4
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
